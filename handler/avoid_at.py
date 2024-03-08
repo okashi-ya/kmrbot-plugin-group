@@ -6,6 +6,7 @@ from nonebot.log import logger
 from utils import get_time_zone
 from utils.permission import white_list_handle
 from ..database.group_data import DBPluginsGroupData
+from utils.push_manager import PushManager
 
 
 def is_avoid_at(
@@ -74,11 +75,11 @@ async def _(
 
     # 撤回刚刚那条消息
     await ProtocolAdapter.delete_msg(ProtocolAdapter.get_bot_id(bot), event)
-    await ProtocolAdapter.send_message(
-        ProtocolAdapter.get_bot_id(bot),
-        msg_type,
-        msg_type_id,
-        ProtocolAdapter.MS.at(src_user_id) + ProtocolAdapter.MS.text(ret_str))
+    PushManager.notify(PushManager.PushData(
+        msg_type=msg_type,
+        msg_type_id=msg_type_id,
+        message=ProtocolAdapter.MS.at(src_user_id) + ProtocolAdapter.MS.text(ret_str)
+    ))
     if final_ban_time == -1:
         # 踢出群
         await ProtocolAdapter.set_group_kick(ProtocolAdapter.get_bot_id(bot), msg_type_id, src_user_id)
