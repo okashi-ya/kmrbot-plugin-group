@@ -1,11 +1,12 @@
 import copy
 import re
-from database.interface.db_impl_interface import DBImplInterface
+from typing import List
+from database.interface.db_impl_interface import DBNoCacheImplInterface
 from database.db_manager import DBManager
 
 
 # 群组
-class DBPluginsGroupData(DBImplInterface):
+class DBPluginsGroupData(DBNoCacheImplInterface):
     """
     key: {msg_type}_{msg_type_id}_{user_id}
     """
@@ -15,6 +16,7 @@ class DBPluginsGroupData(DBImplInterface):
         # 0表示不禁言，-1表示直接踢出群
         "at_punishment_ban_rule": "0",
         "at_punishment_ban_text": "",
+        "is_black": False,
     }
 
     @classmethod
@@ -24,7 +26,7 @@ class DBPluginsGroupData(DBImplInterface):
         data = cls.get_data_by_key(key)
         if data is None:
             data = copy.deepcopy(cls._default_value)
-        cls.set_data(key, data)
+        cls.set_data_by_key(key, data)
 
     @classmethod
     def is_user_avoid_at(cls, msg_type: str, msg_type_id: int, user_id: int) -> bool:
@@ -41,7 +43,7 @@ class DBPluginsGroupData(DBImplInterface):
         if data is None:
             data = copy.deepcopy(cls._default_value)
         data["at_punishment_ban_rule"] = ban_rule
-        cls.set_data(key, data)
+        cls.set_data_by_key(key, data)
 
     @classmethod
     def get_at_punishment_ban_time(cls, msg_type: str, msg_type_id: int, user_id: int, at_count: int) -> int:
@@ -67,7 +69,7 @@ class DBPluginsGroupData(DBImplInterface):
         if data is None:
             data = copy.deepcopy(cls._default_value)
         data["at_punishment_ban_text"] = ban_text
-        cls.set_data(key, data)
+        cls.set_data_by_key(key, data)
 
     @classmethod
     def get_user_at_punishment_ban_text(cls, msg_type: str, msg_type_id: int, user_id: int) -> str:
@@ -77,6 +79,45 @@ class DBPluginsGroupData(DBImplInterface):
         if data is None:
             return ""
         return data["at_punishment_ban_text"]
+
+    @classmethod
+    def is_user_in_black_list(cls, msg_type: str, msg_type_id: int, user_id: int) -> bool:
+        """ 判断用户是否在群组黑名单中 """
+        key = cls.generate_key(msg_type, msg_type_id, user_id)
+        data = cls.get_data_by_key(key)
+        if data is None:
+            return False
+        return data["is_black"]
+
+    @classmethod
+    def add_user_to_black_list(cls, msg_type: str, msg_type_id: int, user_id: int):
+        """ 将用户新增至群组黑名单中 """
+        key = cls.generate_key(msg_type, msg_type_id, user_id)
+        data = cls.get_data_by_key(key)
+        if data is None:
+            data = copy.deepcopy(cls._default_value)
+        data["is_black"] = True
+        cls.set_data_by_key(key, data)
+
+    @classmethod
+    def remove_user_from_black_list(cls, msg_type: str, msg_type_id: int, user_id: int):
+        """ 将用户从群组黑名单中移除 """
+        key = cls.generate_key(msg_type, msg_type_id, user_id)
+        data = cls.get_data_by_key(key)
+        if data is None:
+            return
+        data["is_black"] = False
+        cls.set_data_by_key(key, data)
+
+    @classmethod
+    def get_user_black_list(cls, msg_type: str, msg_type_id: int) -> List[int]:
+        """ 获取当前群组黑名单列表 """
+        black_list = []
+        for key, item in cls.get_data().items():
+            key_info = cls.analysis_key(key)
+            if msg_type == key_info["msg_type"] and msg_type_id == key_info["msg_type_id"] and item.get("is_black"):
+                black_list.append(key_info["user_id"])
+        return black_list
 
     @classmethod
     def db_key_name(cls, bot_id):

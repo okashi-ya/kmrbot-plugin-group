@@ -46,6 +46,7 @@ async def _(
     final_ban_time = 0
     ret_str = ""
     for at_user_id in at_lists:
+        # 有可能@了多个人
         if DBPluginsGroupData.is_user_avoid_at(msg_type, msg_type_id, at_user_id):
             # 这个人不允许at
             if at_count_dict[src_user_id][msg_type_id].get(at_user_id) is None:

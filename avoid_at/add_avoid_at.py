@@ -1,12 +1,11 @@
 import copy
-
 from nonebot import on_command
 from nonebot.internal.matcher import Matcher
 from protocol_adapter.protocol_adapter import ProtocolAdapter
 from protocol_adapter.adapter_type import AdapterMessage, AdapterBot, AdapterMessageEvent, AdapterGroupMessageEvent
 from nonebot.rule import to_me
 from nonebot.params import ArgPlainText, CommandArg
-from .database.group_data import DBPluginsGroupData
+from ..database.group_data import DBPluginsGroupData
 from utils.permission import white_list_handle, only_me
 
 
