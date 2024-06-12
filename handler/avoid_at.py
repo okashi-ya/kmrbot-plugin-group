@@ -1,4 +1,7 @@
 import datetime
+
+import nonebot.exception
+
 from protocol_adapter.adapter_type import AdapterGroupMessageEvent, AdapterBot
 from protocol_adapter.protocol_adapter import ProtocolAdapter
 from nonebot import on_message
@@ -75,15 +78,18 @@ async def _(
             ret_str += DBPluginsGroupData.get_user_at_punishment_ban_text(msg_type, msg_type_id, at_user_id) + "\n"
 
     # 撤回刚刚那条消息
-    await ProtocolAdapter.delete_msg(ProtocolAdapter.get_bot_id(bot), event)
-    PushManager.notify(PushManager.PushData(
-        msg_type=msg_type,
-        msg_type_id=msg_type_id,
-        message=ProtocolAdapter.MS.at(src_user_id) + ProtocolAdapter.MS.text(ret_str)
-    ))
-    if final_ban_time == -1:
-        # 踢出群
-        await ProtocolAdapter.set_group_kick(ProtocolAdapter.get_bot_id(bot), msg_type_id, src_user_id)
-    elif final_ban_time != 0:
-        # 禁言
-        await ProtocolAdapter.set_group_ban(ProtocolAdapter.get_bot_id(bot), msg_type_id, src_user_id, final_ban_time)
+    try:
+        await ProtocolAdapter.delete_msg(ProtocolAdapter.get_bot_id(bot), event)
+        PushManager.notify(PushManager.PushData(
+            msg_type=msg_type,
+            msg_type_id=msg_type_id,
+            message=ProtocolAdapter.MS.at(src_user_id) + ProtocolAdapter.MS.text(ret_str)
+        ))
+        if final_ban_time == -1:
+            # 踢出群
+            await ProtocolAdapter.set_group_kick(ProtocolAdapter.get_bot_id(bot), msg_type_id, src_user_id)
+        elif final_ban_time != 0:
+            # 禁言
+            await ProtocolAdapter.set_group_ban(ProtocolAdapter.get_bot_id(bot), msg_type_id, src_user_id, final_ban_time)
+    except nonebot.exception.ActionFailed as e:
+        logger.warning(f"delete_msg fail ! error = {e}")
